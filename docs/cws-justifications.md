@@ -1,6 +1,6 @@
 # Chrome Web Store Submission & Permission Justifications
 
-Ready-to-paste text for the **Chrome Web Store Developer Dashboard** (`v0.3.0`).
+Ready-to-paste text for the **Chrome Web Store Developer Dashboard** (`v0.3.1`).
 
 ---
 

@@ -40,6 +40,26 @@ Full third-party notices live in [THIRD_PARTY_LICENSES.txt](THIRD_PARTY_LICENSES
 | `<canvas>`, cross-origin unreadable `<video>`, unverified CSS backgrounds | Checked via visible-tab capture backstop only when such candidates exist on screen |
 | DRM video (e.g. Netflix) | Not readable by browser extensions; use the streaming service's own parental controls |
 
+## Build & release from source
+
+Large binary assets (`accurate.fp16.onnx` and `ort-wasm-simd-threaded.asyncify.wasm`) are attached to GitHub Releases rather than tracked in git.
+
+```bash
+make fetch-assets   # download model weights & ONNX WASM from the latest GitHub Release
+make unpacked       # validate, build ZIP, and extract dist/Psalm101-extension-<version>/
+make bundle         # build Chrome Web Store ZIP + SHA-256 checksum
+```
+
+To cut a new release:
+
+```bash
+make bump-patch     # increments extension/manifest.json (e.g. 0.3.1 -> 0.3.2)
+git commit -am "Release v0.3.2"
+make release        # verifies clean tree, builds bundle, pushes main, and creates GitHub Release via gh
+```
+
+*(Pass `DRY_RUN=1` to preview `make release`, or `NOTES="..."` / `NOTES_FILE=...` for custom release notes.)*
+
 ## Privacy & Chrome Web Store documentation
 
 - **Privacy Policy:** [docs/privacy.html](docs/privacy.html)

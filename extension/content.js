@@ -235,17 +235,24 @@
 
   // ---------- video ----------
   const videos = new Map();              // video -> state
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d', { willReadFrequently: false });
+  let grabCanvas = document.createElement('canvas');
+  let grabCtx = grabCanvas.getContext('2d', { willReadFrequently: false });
 
   function grab(v) {
     const w = v.videoWidth, h = v.videoHeight;
     if (!w || !h || v.readyState < 2) return null;
     const s = FRAME_SIZE / Math.max(w, h);
-    canvas.width = Math.max(1, Math.round(w * s));
-    canvas.height = Math.max(1, Math.round(h * s));
-    ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/jpeg', 0.85).split(',')[1];   // throws on cross-origin (tainted) video
+    grabCanvas.width = Math.max(1, Math.round(w * s));
+    grabCanvas.height = Math.max(1, Math.round(h * s));
+    grabCtx.drawImage(v, 0, 0, grabCanvas.width, grabCanvas.height);
+    try {
+      return grabCanvas.toDataURL('image/jpeg', 0.85).split(',')[1];   // throws on cross-origin (tainted) video
+    } catch (e) {
+      // A tainted canvas stays permanently tainted; replace it so same-origin videos on the same page still work.
+      grabCanvas = document.createElement('canvas');
+      grabCtx = grabCanvas.getContext('2d', { willReadFrequently: false });
+      throw e;
+    }
   }
 
   // ---------- buffered video: nothing is shown before it has been checked ----------
@@ -256,17 +263,22 @@
   // HOLD_MS after the flagged frame.
   const BUFFER_MS = 400, CHECK_INTERVAL_MS = 200, HOLD_MS = 1000, MAX_WAIT_MS = 800, MAX_SIDE = 1600;
   let audioCtx = null;
-  const small = document.createElement('canvas');
+  let small = document.createElement('canvas');
 
-  function audioRunning() {
+  function audioRunning(fromGesture = false) {
     try {
-      audioCtx = audioCtx || new AudioContext();
-      if (audioCtx.state !== 'running') audioCtx.resume().catch(() => {});
+      if (!audioCtx) {
+        if (!fromGesture && navigator.userActivation && !navigator.userActivation.hasBeenActive) return false;
+        audioCtx = new AudioContext();
+      }
+      if (audioCtx.state !== 'running' && (fromGesture || !navigator.userActivation || navigator.userActivation.hasBeenActive)) {
+        audioCtx.resume().catch(() => {});
+      }
       return audioCtx.state === 'running';
     } catch (e) { return false; }
   }
   // Sound can only be delayed once the browser lets audio start (after a click or key press on the page).
-  for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { audioRunning(); upgradeVideos(); }, true);
+  for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => { audioRunning(true); upgradeVideos(); }, true);
 
   const hasAudio = (v) => v.srcObject instanceof MediaStream ? v.srcObject.getAudioTracks().length > 0
     : (v.mozHasAudio ?? (v.webkitAudioDecodedByteCount === undefined || v.webkitAudioDecodedByteCount > 0 || v.readyState < 3));
@@ -378,7 +390,9 @@
             this.frames.splice(i, 0, f);
             this.checkNewest();
           })
-          .catch(() => {});
+          .catch((e) => {
+            if (e?.name === 'SecurityError') this.fallbackToOverlay();
+          });
       }
       v.requestVideoFrameCallback(this.onFrame);
     }
@@ -402,12 +416,22 @@
       this.lastCheck = performance.now();
       f.pending = true;
       const gen = this.gen;
-      const s = FRAME_SIZE / Math.max(f.bmp.width, f.bmp.height);
-      small.width = Math.max(1, Math.round(f.bmp.width * s));
-      small.height = Math.max(1, Math.round(f.bmp.height * s));
-      small.getContext('2d').drawImage(f.bmp, 0, 0, small.width, small.height);
+      let data;
+      try {
+        const s = FRAME_SIZE / Math.max(f.bmp.width, f.bmp.height);
+        small.width = Math.max(1, Math.round(f.bmp.width * s));
+        small.height = Math.max(1, Math.round(f.bmp.height * s));
+        small.getContext('2d').drawImage(f.bmp, 0, 0, small.width, small.height);
+        data = small.toDataURL('image/jpeg', 0.85).split(',')[1];
+      } catch (e) {
+        small = document.createElement('canvas');
+        f.pending = false;
+        this.busy = false;
+        if (e?.name === 'SecurityError') this.fallbackToOverlay();
+        return;
+      }
       const t0 = performance.now();
-      const res = await send({ type: 'frame', data: small.toDataURL('image/jpeg', 0.85).split(',')[1] });
+      const res = await send({ type: 'frame', data });
       f.pending = false;
       const elapsed = performance.now() - t0;
       if (res && !res.offline && !res.timeout) this.adapt(elapsed);
@@ -527,6 +551,17 @@
       this.dark = true;
     }
 
+    // Cross-origin video whose pixels became unreadable (e.g. src switched to a cross-origin CDN):
+    // release the opaque buffer canvas and let the tab-capture backstop monitor it.
+    fallbackToOverlay() {
+      if (this.dead) return;
+      const v = this.v, st = videos.get(v);
+      this.stop(false);
+      if (st) { st.buffer = null; st.mode = 'overlay'; st.readable = false; }
+      v.setAttribute(VATTR, 'overlay');
+      scheduleSweep(100);
+    }
+
     // Stop buffering this video (removed, video filtering turned off, or entered native fullscreen).
     stop(forget = true) {
       this.dead = true;
@@ -547,11 +582,11 @@
     }
   }
 
-  // Switch a readable, visible video to buffered playback when possible (frame callbacks available, and its sound
-  // can be delayed or it has none).  Otherwise it stays in sampling mode.
+  // Switch a readable, visible video to buffered playback when possible (pixels proven readable, frame callbacks
+  // available, and its sound can be delayed or it has none).  Otherwise it stays in sampling mode.
   function tryBuffer(v) {
     const st = videos.get(v);
-    if (!st || st.mode !== 'sample' || !v.requestVideoFrameCallback || !window.createImageBitmap) return false;
+    if (!st || st.mode !== 'sample' || !st.readable || !v.requestVideoFrameCallback || !window.createImageBitmap) return false;
     if (v.offsetWidth < 120 || v.offsetHeight < 68) return false;
     if (document.fullscreenElement === v) return false;      // nothing can be drawn over a video that is itself fullscreen
     if (hasAudio(v) && !audioRunning()) return false;        // can't delay its sound yet; retried after a click
@@ -586,10 +621,15 @@
     try { data = grab(v); } catch (e) {
       // Can't read its pixels: the backstop (tab capture) handles this video.
       st.mode = 'overlay';
+      st.readable = false;
       v.setAttribute(VATTR, 'overlay');
+      scheduleSweep(100);
       return;
     }
-    if (data && tryBuffer(v)) return;
+    if (data) {
+      st.readable = true;
+      if (tryBuffer(v)) return;
+    }
     if (!data) {
       if (v.poster && !v.getAttribute(VATTR)) {           // not playing yet: judge the poster image
         st.busy = true;
@@ -632,13 +672,14 @@
 
   function watchVideo(v) {
     if (!videoEnabled || videos.has(v)) return;
-    videos.set(v, { busy: false, last: -1e9, clean: 0, mode: 'sample' });
+    videos.set(v, { busy: false, last: -1e9, clean: 0, mode: 'sample', readable: false });
     const kick = () => { const st = videos.get(v); if (st && st.mode === 'sample') { st.last = -1e9; sampleVideo(v); } };
     v.addEventListener('loadeddata', kick);
+    v.addEventListener('canplay', kick);
     v.addEventListener('seeked', kick);
     v.addEventListener('play', kick);
     // A src change starts over: hidden until its first frame is checked (buffered videos handle this themselves).
-    v.addEventListener('emptied', () => { const st = videos.get(v); if (st && st.mode === 'sample') v.removeAttribute(VATTR); });
+    v.addEventListener('emptied', () => { const st = videos.get(v); if (st && st.mode === 'sample') { st.readable = false; v.removeAttribute(VATTR); } });
     videoLoop(v);
     kick();
     // Watchdog: frame callbacks pause in some cases (e.g. off screen); keep sampling a playing video regardless.
@@ -661,6 +702,10 @@
           if (v.getAttribute(VATTR) === 'blocked') blockedCount = Math.max(0, blockedCount - 1);
           if (st.mutedByUs) { v.muted = false; st.mutedByUs = false; }
           videos.delete(v);
+        }
+        if (v.getAttribute('data-psalm-sweep') === 'blocked') {
+          v.removeAttribute('data-psalm-sweep');
+          blockedCount = Math.max(0, blockedCount - 1);
         }
         v.removeAttribute(VATTR);
         delete v.dataset.psalmBuffer;
@@ -837,7 +882,7 @@
         if (a === 'ok') add(v, false); else if (a === 'overlay') add(v, true);
       }
     }
-    for (const c of document.querySelectorAll('canvas:not([data-psalm-sweep])')) add(c, true);
+    for (const c of document.querySelectorAll('canvas:not([data-psalm-sweep]):not([data-psalm-buffer])')) add(c, true);
     for (const el of document.querySelectorAll('[data-psalm-bg="ok"]')) add(el, false);
     for (const el of document.querySelectorAll('[data-psalm-bg="unverified"]')) add(el, true);
     const res = await send({ type: 'sweep', viewport: [innerWidth, innerHeight], masks, candidates: cands });

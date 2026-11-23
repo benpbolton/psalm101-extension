@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Psalm101",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Filters explicit and suggestive images and video frames on this device before they appear — 100% local and private.",
   "permissions": [
     "storage",
