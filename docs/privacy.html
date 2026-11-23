@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Psalm101 — Privacy Policy</title>
+  <style>
+    :root {
+      --bg: #f3f6f9;
+      --bg-glow: radial-gradient(90% 35% at 50% 0%, rgba(70, 96, 122, .11), transparent 70%);
+      --card: #ffffff;
+      --card-border: rgba(24, 38, 54, .08);
+      --fg: #18212b;
+      --muted: #586572;
+      --faint: #8a97a3;
+      --line: #e4eaf0;
+      --accent: #3d5a77;
+      --accent-soft: #eaf0f6;
+      --good: #2d8f61;
+      --good-soft: rgba(45, 143, 97, .12);
+      --shadow: 0 1px 2px rgba(20, 32, 46, .04), 0 10px 26px -10px rgba(20, 32, 46, .09);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #14181e;
+        --bg-glow: radial-gradient(90% 35% at 50% 0%, rgba(130, 170, 210, .13), transparent 70%);
+        --card: #1d222a;
+        --card-border: rgba(255, 255, 255, .08);
+        --fg: #edf1f5;
+        --muted: #9aa6b2;
+        --faint: #6a7683;
+        --line: #2c333d;
+        --accent: #95b8d9;
+        --accent-soft: rgba(149, 184, 217, .14);
+        --good: #5bc691;
+        --good-soft: rgba(91, 198, 145, .15);
+        --shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 10px 28px -10px rgba(0, 0, 0, .5);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      background: var(--bg-glow), var(--bg); color: var(--fg);
+      font: 15px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 48px 24px 72px; }
+    header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+    header img { width: 42px; height: 42px; border-radius: 10px; }
+    h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+    .meta { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; }
+    .summary {
+      background: var(--good-soft); color: var(--good);
+      border-radius: 12px; padding: 14px 16px; font-weight: 550; font-size: 14.5px;
+      margin-bottom: 22px;
+    }
+    .card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 16px; box-shadow: var(--shadow); padding: 24px 26px;
+    }
+    h2 { margin: 22px 0 8px; font-size: 16.5px; font-weight: 650; letter-spacing: -.01em; }
+    h2:first-child { margin-top: 0; }
+    p { margin: 0 0 12px; color: var(--muted); }
+    ul { margin: 0 0 14px; padding-left: 20px; color: var(--muted); }
+    li { margin-bottom: 6px; }
+    strong { color: var(--fg); }
+    code {
+      font: 13px ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: var(--accent-soft); color: var(--accent);
+      padding: 1px 6px; border-radius: 5px;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    footer { margin-top: 24px; text-align: center; color: var(--faint); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <img src="assets/icon-128.png" alt="Psalm101 icon">
+      <div>
+        <h1>Privacy Policy</h1>
+        <p class="meta">Psalm101 Browser Extension · Last updated November 23, 2026</p>
+      </div>
+    </header>
+
+    <div class="summary">
+      Short version: Psalm101 runs 100% locally inside your browser. No images, video frames, screenshots, URLs,
+      browsing history, analytics, or telemetry are ever sent to any external server.
+    </div>
+
+    <article class="card">
+      <h2>1. Data Accessed Locally</h2>
+      <p>To perform its single purpose — filtering explicit and suggestive visual content before it is displayed — Psalm101 transiently reads the following data <strong>exclusively in local browser memory</strong>:</p>
+      <ul>
+        <li><strong>Page images and CSS background images:</strong> Pixels or image files on web pages you visit are decoded and evaluated locally by the bundled on-device machine learning model (SigLIP2-B/16 running via ONNX Runtime Web).</li>
+        <li><strong>Video frames (when "Filter video" is enabled):</strong> Frames sampled from playing <code>&lt;video&gt;</code> elements are classified locally in memory and immediately discarded after display.</li>
+        <li><strong>Visible-tab captures (backstop only):</strong> Strictly when a page contains unreadable <code>&lt;canvas&gt;</code>, cross-origin <code>&lt;video&gt;</code>, or unverified CSS background candidates, the extension uses <code>chrome.tabs.captureVisibleTab</code> to crop and classify only those candidate regions locally in memory, then discards the capture immediately.</li>
+        <li><strong>Active tab title and URL (user-initiated diagnostics only):</strong> Read only if you manually click <em>Copy</em> under Page Diagnostics in Settings to copy recent local image-check status events to your clipboard.</li>
+      </ul>
+
+      <h2>2. Zero Data Transmission &amp; No Tracking</h2>
+      <ul>
+        <li>Psalm101 operates completely offline after installation — the ML model weights and ONNX WebAssembly/WebGPU runtime are bundled inside the extension package.</li>
+        <li>The extension never transmits images, video frames, screenshots, URLs, browsing history, or usage analytics to the developer or any third party.</li>
+        <li>The extension makes image fetches only to the same websites you are already visiting when cross-origin browser canvas restrictions prevent reading pixels directly from the page.</li>
+        <li>Psalm101 contains no ads, no trackers, no third-party SDKs, and no remote code execution.</li>
+      </ul>
+
+      <h2>3. Local Storage</h2>
+      <p>Psalm101 stores only minimal configuration locally in <code>chrome.storage.local</code> (and reads optional administrator-configured browser policy from <code>chrome.storage.managed</code>):</p>
+      <ul>
+        <li>Selected filtering strictness level (<code>0</code>–<code>3</code>).</li>
+        <li>Whether video filtering is enabled (<code>true</code>/<code>false</code>).</li>
+        <li>An optional parent-lock password stored solely as a salted SHA-256 hash (never in plaintext), plus a temporary unlock timestamp in <code>chrome.storage.session</code>.</li>
+      </ul>
+      <p>Image classification probability scores are cached only in transient volatile RAM (up to 5,000 entries, never written to disk) and cleared when the browser or service worker closes. Images and screenshots are never saved to disk.</p>
+
+      <h2>4. Chrome Web Store Limited Use Compliance</h2>
+      <p>Psalm101's use of information received from browser APIs adheres strictly to the Chrome Web Store User Data Policy, including the Limited Use requirements. Local visual content is used solely to provide real-time on-device content filtering and is never sold, shared, transferred, or used for advertising, profiling, or creditworthiness.</p>
+
+      <h2>5. Open Source &amp; Contact</h2>
+      <p>Psalm101 is open-source so anyone can audit its code and privacy guarantees directly at <a href="https://github.com/benpbolton/psalm101-extension">github.com/benpbolton/psalm101-extension</a>. For privacy questions or security reports, please open an issue on the GitHub repository.</p>
+    </article>
+
+    <footer>
+      <a href="index.html">Home</a> · <a href="cws-justifications.html">Chrome Web Store Permissions</a> · <a href="https://github.com/benpbolton/psalm101-extension">GitHub</a>
+    </footer>
+  </main>
+</body>
+</html>

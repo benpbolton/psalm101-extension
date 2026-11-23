@@ -1,0 +1,40 @@
+/* Psalm101: an image stays invisible until the app has said it may be shown. Its space on the page is kept,
+   so the page doesn't jump, and a filtered image simply leaves the page background showing. */
+img:not([data-psalm="ok"]):not([data-psalm="hold"]),
+input[type="image"]:not([data-psalm="ok"]):not([data-psalm="hold"]) {
+  opacity: 0 !important;
+}
+/* An approved image whose page gave it a new picture: until the new one is checked, the old (approved) picture stays
+   drawn in its place (content: url() replaces what the element paints), so it neither blinks nor shows anything
+   unchecked. */
+img[data-psalm="hold"] {
+  content: var(--psalm-hold) !important;
+}
+/* Newly approved images fade in briefly instead of popping (hiding is always instant). */
+@keyframes psalm-reveal { from { opacity: 0; } to { opacity: 1; } }
+img[data-psalm-reveal], input[type="image"][data-psalm-reveal] {
+  animation: psalm-reveal 0.1s ease-out;
+}
+img[data-psalm="blocked"],
+input[type="image"][data-psalm="blocked"] {
+  visibility: hidden !important;
+}
+/* Videos: hidden until their first frame has been checked, and while a frame is flagged.  A "buffered" video plays
+   under the extension's canvas, which shows its frames a moment late, only once checked.  Videos whose pixels the
+   extension can't read ("overlay") are shown and covered by the backstop.  Disabled cleanly when video filtering is off. */
+html:not([data-psalm-no-video]) video:not([data-psalm-video]),
+html:not([data-psalm-no-video]) video[data-psalm-video="blocked"] {
+  opacity: 0 !important;
+}
+/* Buffered: the live video is effectively invisible (it must still be composited to deliver frames); the canvas
+   above it shows the checked, delayed copy. */
+html:not([data-psalm-no-video]) video[data-psalm-video="buffered"] {
+  opacity: 0.001 !important;
+}
+/* Found after painting (CSS backgrounds, canvas, unreadable video, anything else the backstop flags). */
+[data-psalm-bg="blocked"] {
+  background-image: none !important;
+}
+[data-psalm-sweep="blocked"] {
+  visibility: hidden !important;
+}

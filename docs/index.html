@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Psalm101 — On-Device Image &amp; Video Filter</title>
+  <style>
+    :root {
+      --bg: #f3f6f9;
+      --bg-glow: radial-gradient(90% 45% at 50% 0%, rgba(70, 96, 122, .13), transparent 70%);
+      --card: #ffffff;
+      --card-border: rgba(24, 38, 54, .08);
+      --fg: #18212b;
+      --muted: #5b6875;
+      --faint: #8a97a3;
+      --line: #e4eaf0;
+      --accent: #3d5a77;
+      --accent-soft: #eaf0f6;
+      --good: #2d8f61;
+      --good-soft: rgba(45, 143, 97, .12);
+      --shadow: 0 1px 2px rgba(20, 32, 46, .04), 0 12px 28px -12px rgba(20, 32, 46, .10);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #14181e;
+        --bg-glow: radial-gradient(90% 45% at 50% 0%, rgba(130, 170, 210, .14), transparent 70%);
+        --card: #1d222a;
+        --card-border: rgba(255, 255, 255, .08);
+        --fg: #edf1f5;
+        --muted: #9aa6b2;
+        --faint: #6a7683;
+        --line: #2c333d;
+        --accent: #95b8d9;
+        --accent-soft: rgba(149, 184, 217, .14);
+        --good: #5bc691;
+        --good-soft: rgba(91, 198, 145, .15);
+        --shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 12px 30px -12px rgba(0, 0, 0, .55);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      background: var(--bg-glow), var(--bg); color: var(--fg);
+      font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 56px 24px 72px; }
+    .hero { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
+    .hero img { width: 56px; height: 56px; border-radius: 13px; box-shadow: 0 6px 18px rgba(20, 32, 46, .16); }
+    h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -.025em; line-height: 1.15; }
+    .tagline { margin: 4px 0 0; color: var(--muted); font-size: 16px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 5px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+      color: var(--good); background: var(--good-soft); margin-bottom: 26px;
+    }
+    .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 22px; }
+    .card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 16px; box-shadow: var(--shadow); padding: 20px 22px;
+    }
+    .card h2 { margin: 0 0 6px; font-size: 15px; font-weight: 650; }
+    .card p { margin: 0; color: var(--muted); font-size: 14px; }
+    .links { display: flex; flex-wrap: wrap; gap: 10px; margin: 26px 0 36px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 18px; border-radius: 10px; text-decoration: none;
+      font-weight: 600; font-size: 14px; transition: opacity .15s;
+    }
+    .btn:hover { opacity: .88; }
+    .btn.primary { background: var(--accent); color: var(--card); }
+    .btn.secondary { background: var(--accent-soft); color: var(--accent); }
+    footer { color: var(--faint); font-size: 13px; border-top: 1px solid var(--line); padding-top: 20px; }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="hero">
+      <img src="assets/icon-128.png" alt="Psalm101 icon">
+      <div>
+        <h1>Psalm101</h1>
+        <p class="tagline">Private, 100% on-device image &amp; video filtering for Chromium browsers.</p>
+      </div>
+    </div>
+
+    <div class="pill">Zero external servers · Everything runs locally on your device</div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Hidden before paint</h2>
+        <p>Images stay invisible while keeping page layout intact until approved locally, preventing unwanted flashes.</p>
+      </div>
+      <div class="card">
+        <h2>Buffered video filtering</h2>
+        <p>Checks playing video frames steadily behind a short synchronized pre-buffer, with a one-click toggle for slower computers.</p>
+      </div>
+      <div class="card">
+        <h2>Four live strictness levels</h2>
+        <p>Switch between Very strict, Strict, Moderate, and Relaxed — open tabs re-evaluate immediately with no reload.</p>
+      </div>
+      <div class="card">
+        <h2>Parent lock &amp; managed policy</h2>
+        <p>Lock settings with a local salted password hash or deploy centrally via Chrome/Brave enterprise policy.</p>
+      </div>
+    </div>
+
+    <div class="links">
+      <a class="btn primary" href="https://github.com/benpbolton/psalm101-extension">View on GitHub</a>
+      <a class="btn secondary" href="privacy.html">Privacy Policy</a>
+      <a class="btn secondary" href="cws-justifications.html">Permissions &amp; Review Notes</a>
+    </div>
+
+    <footer>
+      Open-source under Apache-2.0 · On-device SigLIP2-B/16 (Apache-2.0) &amp; ONNX Runtime Web (MIT) ·
+      <a href="privacy.html">Privacy Policy</a>
+    </footer>
+  </main>
+</body>
+</html>

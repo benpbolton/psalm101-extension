@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Psalm101</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="icons/48.png" alt="" width="28" height="28">
+    <div class="brand">
+      <h1>Psalm101</h1>
+    </div>
+    <span id="statusPill" class="pill" title="">
+      <span id="dot" class="dot"></span>
+      <span id="statusText">On device</span>
+    </span>
+  </header>
+
+  <section class="card level" aria-label="Filtering level">
+    <div class="card-top">
+      <span class="eyebrow">Protection</span>
+      <span id="strength" class="strength" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    </div>
+    <div class="level-name" id="levelName">Very strict</div>
+    <div class="level-detail" id="levelDetail"></div>
+
+    <div class="slider" id="slider">
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <div class="notches"><i></i><i></i><i></i><i></i></div>
+      <input id="level" type="range" min="0" max="3" step="1" aria-label="Filtering level">
+    </div>
+
+    <div class="ticks" id="ticks">
+      <button type="button" data-v="0">Very strict</button>
+      <button type="button" data-v="1">Strict</button>
+      <button type="button" data-v="2">Moderate</button>
+      <button type="button" data-v="3">Relaxed</button>
+    </div>
+  </section>
+
+  <section class="card toggle-card" aria-label="Video filtering">
+    <div class="toggle-copy">
+      <div class="toggle-title">Filter video</div>
+      <div class="toggle-sub" id="videoSub">Checks playing video frames</div>
+    </div>
+    <label class="switch">
+      <input id="video" type="checkbox" role="switch" aria-label="Filter video" checked>
+      <span class="knob"></span>
+    </label>
+  </section>
+
+  <div class="unlock card" id="unlock" hidden>
+    <div class="unlock-row">
+      <input id="pw" type="password" placeholder="Enter password to change" autocomplete="current-password">
+      <button type="button" id="unlockGo">Unlock</button>
+    </div>
+    <div class="unlock-err" id="pwErr" hidden>Incorrect password.</div>
+  </div>
+
+  <footer>
+    <span id="hidden" class="page-stat">Page is clear</span>
+    <span class="actions">
+      <button type="button" id="lock" class="icon" hidden title="Lock settings" aria-label="Lock settings"></button>
+      <a href="#" id="details">Details<span aria-hidden="true"> ›</span></a>
+    </span>
+  </footer>
+
+  <script src="rules.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

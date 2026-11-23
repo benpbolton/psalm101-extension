@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Psalm101 — Permissions &amp; Chrome Web Store Review Notes</title>
+  <style>
+    :root {
+      --bg: #f3f6f9;
+      --bg-glow: radial-gradient(90% 35% at 50% 0%, rgba(70, 96, 122, .11), transparent 70%);
+      --card: #ffffff;
+      --card-border: rgba(24, 38, 54, .08);
+      --fg: #18212b;
+      --muted: #586572;
+      --faint: #8a97a3;
+      --line: #e4eaf0;
+      --accent: #3d5a77;
+      --accent-soft: #eaf0f6;
+      --shadow: 0 1px 2px rgba(20, 32, 46, .04), 0 10px 26px -10px rgba(20, 32, 46, .09);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #14181e;
+        --bg-glow: radial-gradient(90% 35% at 50% 0%, rgba(130, 170, 210, .13), transparent 70%);
+        --card: #1d222a;
+        --card-border: rgba(255, 255, 255, .08);
+        --fg: #edf1f5;
+        --muted: #9aa6b2;
+        --faint: #6a7683;
+        --line: #2c333d;
+        --accent: #95b8d9;
+        --accent-soft: rgba(149, 184, 217, .14);
+        --shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 10px 28px -10px rgba(0, 0, 0, .5);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      background: var(--bg-glow), var(--bg); color: var(--fg);
+      font: 15px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 48px 24px 72px; }
+    header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+    header img { width: 42px; height: 42px; border-radius: 10px; }
+    h1 { margin: 0; font-size: 25px; font-weight: 700; letter-spacing: -.02em; }
+    .meta { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; }
+    .card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 16px; box-shadow: var(--shadow); padding: 24px 26px; margin-bottom: 16px;
+    }
+    h2 { margin: 0 0 10px; font-size: 16.5px; font-weight: 650; }
+    p { margin: 0 0 12px; color: var(--muted); }
+    p:last-child { margin-bottom: 0; }
+    ul { margin: 0; padding-left: 20px; color: var(--muted); }
+    li { margin-bottom: 8px; }
+    strong { color: var(--fg); }
+    code {
+      font: 13px ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: var(--accent-soft); color: var(--accent);
+      padding: 1px 6px; border-radius: 5px;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    footer { margin-top: 24px; text-align: center; color: var(--faint); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <img src="assets/icon-128.png" alt="Psalm101 icon">
+      <div>
+        <h1>Permissions &amp; Review Notes</h1>
+        <p class="meta">Psalm101 Browser Extension · Chrome Web Store Transparency</p>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Single Purpose</h2>
+      <p>Filters explicit and suggestive images and video frames on web pages locally on the user's device before they are displayed.</p>
+    </section>
+
+    <section class="card">
+      <h2>Permission Justifications</h2>
+      <ul>
+        <li><strong><code>storage</code>:</strong> Stores the filtering strictness level (0–3), video-filtering toggle, and optional salted SHA-256 parent-lock password hash locally in <code>chrome.storage.local</code>, stores temporary unlock expiry in <code>chrome.storage.session</code>, and reads optional administrator policy overrides from <code>chrome.storage.managed</code>.</li>
+        <li><strong><code>offscreen</code>:</strong> Hosts the local ONNX Runtime Web inference engine (<code>engine.html</code> / <code>engine.js</code>) with WebGPU, WebNN, and WebAssembly support, since Manifest V3 service workers cannot access WebGPU/DOM APIs needed to decode images and run the bundled neural network locally.</li>
+        <li><strong><code>&lt;all_urls&gt;</code> host permissions:</strong> Injects <code>content.js</code>/<code>content.css</code> at <code>document_start</code> so images stay hidden before paint across visited sites, fetches cross-origin image bytes locally when canvas readback is blocked by CORS, calls <code>chrome.tabs.captureVisibleTab</code> strictly when unreadable <code>&lt;canvas&gt;</code>, cross-origin <code>&lt;video&gt;</code>, or unverified CSS background candidates are present on screen, and reads the active tab title/URL only when the user manually clicks <em>Copy</em> under Page Diagnostics.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>No Remote Code &amp; CSP</h2>
+      <p>All JavaScript, WebAssembly (<code>vendor/ort-wasm-simd-threaded.asyncify.wasm</code>, MIT), and ONNX model weights (<code>models/accurate.fp16.onnx</code>, fine-tuned from Apache-2.0 Google SigLIP2-B/16) are bundled directly inside the extension package. The <code>'wasm-unsafe-eval'</code> CSP directive is used strictly to instantiate the bundled ONNX Runtime Web <code>.wasm</code> CPU fallback when WebGPU/WebNN is unavailable. The extension makes zero calls to developer servers, third-party APIs, or localhost services.</p>
+    </section>
+
+    <footer>
+      <a href="index.html">Home</a> · <a href="privacy.html">Privacy Policy</a> · <a href="https://github.com/benpbolton/psalm101-extension">GitHub</a>
+    </footer>
+  </main>
+</body>
+</html>

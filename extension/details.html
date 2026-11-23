@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Psalm101 · Settings</title>
+  <link rel="stylesheet" href="details.css">
+</head>
+<body>
+  <main>
+    <header>
+      <img src="icons/128.png" alt="" width="44" height="44">
+      <div class="title-block">
+        <h1>Psalm101</h1>
+        <p class="sub" id="summary">On-device image and video filtering</p>
+      </div>
+      <span id="modeBadge" class="pill good">Private &amp; local</span>
+    </header>
+
+    <section class="card">
+      <h2>This device</h2>
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Processor</div>
+          <div class="metric-value" id="mBackend">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Check speed</div>
+          <div class="metric-value" id="mSpeed">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Checked</div>
+          <div class="metric-value" id="mChecks">0</div>
+        </div>
+      </div>
+
+      <dl id="device"></dl>
+
+      <div class="setting-row">
+        <div>
+          <div class="label">Filter video</div>
+          <div class="note" id="videoNote">Buffers and checks playing video frames. Turn off on slower computers.</div>
+        </div>
+        <label class="switch">
+          <input id="videoToggle" type="checkbox" role="switch" aria-label="Filter video" checked>
+          <span class="knob"></span>
+        </label>
+      </div>
+
+      <div class="privacy-note">
+        <span class="shield" aria-hidden="true"></span>
+        <span>Every image and video frame is analyzed locally on this device. Nothing is sent to external servers.</span>
+      </div>
+
+      <div class="row end" id="benchRow">
+        <span class="note" id="benchOut"></span>
+        <button type="button" class="button quiet" id="bench">Run speed test</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Parent password</h2>
+        <span id="pwBadge" class="pill">Not set</span>
+      </div>
+      <p class="note" id="pwNote"></p>
+      <div class="row" id="pwRow">
+        <input id="pw" type="password" autocomplete="new-password">
+        <button type="button" class="button" id="pwGo"></button>
+      </div>
+      <div class="row end" id="lockRow" hidden>
+        <button type="button" class="button subtle" id="pwClear">Remove password</button>
+        <button type="button" class="button quiet" id="lockNow">Lock now</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Troubleshooting</h2>
+      <div class="row compact">
+        <div>
+          <div class="label">Page diagnostics</div>
+          <div class="note" id="diagTarget">What happened to the images on a page, to share when something looks wrong.</div>
+        </div>
+        <button type="button" class="button quiet" id="diag">Copy</button>
+      </div>
+      <ul class="problems" id="problems" hidden></ul>
+    </section>
+
+    <p class="foot" id="msg"></p>
+    <footer class="about" id="about">
+      Psalm101 · On-device SigLIP2-B/16 (Apache-2.0) · ONNX Runtime Web (MIT)
+    </footer>
+  </main>
+
+  <script src="rules.js"></script>
+  <script src="details.js"></script>
+</body>
+</html>

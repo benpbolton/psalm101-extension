@@ -1,0 +1,4 @@
+.DS_Store
+dist/
+extension/models/*.onnx
+extension/vendor/*.wasm

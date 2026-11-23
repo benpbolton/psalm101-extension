@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "level": {
+      "title": "Filtering level",
+      "description": "0 very strict, 1 strict, 2 moderate, 3 relaxed",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3
+    },
+    "video": {
+      "title": "Filter video",
+      "description": "Check playing video frames on this device",
+      "type": "boolean"
+    },
+    "passwordHash": {
+      "title": "Settings password (SHA-256 hex of salt + password)",
+      "type": "string"
+    },
+    "passwordSalt": {
+      "title": "Salt for passwordHash",
+      "type": "string"
+    }
+  }
+}
