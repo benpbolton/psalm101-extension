@@ -3,8 +3,8 @@
 #   make help          show available targets
 #   make fetch-assets  download ONNX model & WASM runtime from GitHub Releases (ASSET_TAG=latest or vX.Y.Z)
 #   make check         validate manifest.json, managed_schema.json, JS syntax, and required files
-#   make bundle        build Chrome Web Store ZIP (dist/Psalm101-extension-<version>.zip) + SHA-256
-#   make unpacked      build ZIP and extract to dist/Psalm101-extension-<version>/ for Load unpacked
+#   make bundle        build Chrome Web Store ZIP (dist/Psalm101-extension-<version>.zip) + refresh dist/Psalm101-extension/
+#   make unpacked      alias for bundle (refreshes stable dist/Psalm101-extension/ for Load unpacked)
 #   make bump          set version (e.g. make bump NEW_VERSION=0.3.2)
 #   make bump-patch    increment patch version (0.3.1 -> 0.3.2)
 #   make bump-minor    increment minor version (0.3.1 -> 0.4.0)
@@ -23,7 +23,7 @@ ASSET_TAG ?= latest
 BUMP      ?= auto
 ZIP_NAME  := Psalm101-extension-$(VERSION).zip
 ZIP       := $(DIST)/$(ZIP_NAME)
-UNPACKED  := $(DIST)/Psalm101-extension-$(VERSION)
+UNPACKED  := $(DIST)/Psalm101-extension
 STAGE     := $(DIST)/.stage
 MODEL     := $(EXT)/models/accurate.fp16.onnx
 WASM      := $(EXT)/vendor/ort-wasm-simd-threaded.asyncify.wasm
@@ -60,18 +60,17 @@ check:
 	@echo "check ok (Psalm101 $(TAG))"
 
 bundle: check $(MODEL) $(WASM)
-	@rm -rf $(STAGE) && mkdir -p $(STAGE)
+	@rm -rf $(STAGE) && mkdir -p $(STAGE) $(UNPACKED)
 	@rsync -a --exclude .DS_Store --exclude 'models/README.md' --exclude tests --exclude 'config*.js' $(EXT)/ $(STAGE)/
+	@rsync -a --delete $(STAGE)/ $(UNPACKED)/
 	@rm -f $(ZIP) && cd $(STAGE) && zip -qrX ../$(ZIP_NAME) .
 	@rm -rf $(STAGE)
 	@unzip -l $(ZIP) | awk '{print $$4}' | grep -qx 'manifest.json' || { echo "ERROR: manifest.json missing at ZIP root"; exit 1; }
 	@shasum -a 256 $(ZIP) | awk '{print $$1 "  $(ZIP_NAME)"}' > $(ZIP).sha256
 	@echo "built $(ZIP) ($$(du -h $(ZIP) | cut -f1))  sha256: $$(cut -d' ' -f1 $(ZIP).sha256)"
+	@echo "unpacked: $(UNPACKED)/  (Load unpacked / Reload)"
 
 unpacked: bundle
-	@rm -rf $(UNPACKED) && mkdir -p $(UNPACKED)
-	@unzip -q $(ZIP) -d $(UNPACKED)
-	@echo "unpacked: $(UNPACKED)  (load via chrome://extensions -> Load unpacked)"
 
 bump:
 	@test -n "$(NEW_VERSION)" || { echo "usage: make bump NEW_VERSION=0.3.2"; exit 1; }

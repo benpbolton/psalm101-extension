@@ -46,8 +46,8 @@ Large binary assets (`accurate.fp16.onnx` and `ort-wasm-simd-threaded.asyncify.w
 
 ```bash
 make fetch-assets   # download model weights & ONNX WASM from the latest GitHub Release
-make unpacked       # validate, build ZIP, and extract dist/Psalm101-extension-<version>/
-make bundle         # build Chrome Web Store ZIP + SHA-256 checksum
+make bundle         # validate, build CWS ZIP + SHA-256, and refresh dist/Psalm101-extension/
+make unpacked       # alias for make bundle (load dist/Psalm101-extension/ via Load unpacked)
 ```
 
 To cut a new release (one command):
