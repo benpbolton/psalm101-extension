@@ -50,15 +50,16 @@ make unpacked       # validate, build ZIP, and extract dist/Psalm101-extension-<
 make bundle         # build Chrome Web Store ZIP + SHA-256 checksum
 ```
 
-To cut a new release:
+To cut a new release (one command):
 
 ```bash
-make bump-patch     # increments extension/manifest.json (e.g. 0.3.1 -> 0.3.2)
-git commit -am "Release v0.3.2"
-make release        # verifies clean tree, builds bundle, pushes main, and creates GitHub Release via gh
+make release                          # auto-bumps patch if current tag exists, commits, bundles, pushes, and publishes GitHub Release
+make release BUMP=minor               # bump minor version (e.g. 0.3.1 -> 0.4.0)
+make release NEW_VERSION=1.0.0        # set an explicit version
+make release DRY_RUN=1                # preview without modifying git or publishing
 ```
 
-*(Pass `DRY_RUN=1` to preview `make release`, or `NOTES="..."` / `NOTES_FILE=...` for custom release notes.)*
+*(Pass `NOTES="..."` or `NOTES_FILE=...` for custom release notes; otherwise GitHub auto-generates them.)*
 
 ## Privacy & Chrome Web Store documentation
 

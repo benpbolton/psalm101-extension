@@ -3,13 +3,14 @@
 #   make help          show available targets
 #   make fetch-assets  download ONNX model & WASM runtime from GitHub Releases (ASSET_TAG=latest or vX.Y.Z)
 #   make check         validate manifest.json, managed_schema.json, JS syntax, and required files
-#   make bundle        build Chrome Web Store ZIP (dist/Psalm101-extension-<version>.zip)
+#   make bundle        build Chrome Web Store ZIP (dist/Psalm101-extension-<version>.zip) + SHA-256
 #   make unpacked      build ZIP and extract to dist/Psalm101-extension-<version>/ for Load unpacked
 #   make bump          set version (e.g. make bump NEW_VERSION=0.3.2)
 #   make bump-patch    increment patch version (0.3.1 -> 0.3.2)
 #   make bump-minor    increment minor version (0.3.1 -> 0.4.0)
-#   make release       verify clean git tree, bundle, push main, tag v<version>, and publish GitHub Release
-#                      (supports DRY_RUN=1 and NOTES="Release notes..." or NOTES_FILE=path)
+#   make release       one-command release: auto-bump patch if current tag exists (or NEW_VERSION=x.y.z / BUMP=minor|none),
+#                      commit bump, bundle, push main, tag v<version>, and publish GitHub Release
+#                      (DRY_RUN=1 to preview; NOTES="..." or NOTES_FILE=path for custom notes)
 #   make clean         remove dist/
 
 SHELL     := /bin/bash
@@ -19,6 +20,7 @@ DIST      := dist
 VERSION   := $(shell python3 -c "import json; print(json.load(open('$(EXT)/manifest.json'))['version'])")
 TAG       := v$(VERSION)
 ASSET_TAG ?= latest
+BUMP      ?= auto
 ZIP_NAME  := Psalm101-extension-$(VERSION).zip
 ZIP       := $(DIST)/$(ZIP_NAME)
 UNPACKED  := $(DIST)/Psalm101-extension-$(VERSION)
@@ -31,7 +33,7 @@ REQ_ICONS := $(EXT)/icons/16.png $(EXT)/icons/32.png $(EXT)/icons/48.png $(EXT)/
 .PHONY: help fetch-assets check bundle unpacked bump bump-patch bump-minor release clean
 
 help:
-	@sed -n '3,13p' Makefile | sed 's/^# \{0,1\}//'
+	@sed -n '3,14p' Makefile | sed 's/^# \{0,1\}//'
 
 fetch-assets:
 	@mkdir -p $(EXT)/models $(EXT)/vendor
@@ -87,31 +89,63 @@ bump-minor:
 	@next=$$(python3 -c "a,b,c='$(VERSION)'.split('.'); print(f'{a}.{int(b)+1}.0')") && \
 		$(MAKE) --no-print-directory bump NEW_VERSION=$$next
 
-release: check bundle
-	@command -v gh >/dev/null 2>&1 || { echo "ERROR: GitHub CLI (gh) is required"; exit 1; }
-	@test -z "$$(git status --porcelain)" || { echo "ERROR: working tree is not clean; commit changes before releasing"; git status --short; exit 1; }
-	@branch=$$(git rev-parse --abbrev-ref HEAD); test "$$branch" = "main" || { echo "ERROR: releases must be cut from main (currently on $$branch)"; exit 1; }
-	@! git rev-parse "$(TAG)" >/dev/null 2>&1 || { echo "ERROR: git tag $(TAG) already exists (run 'make bump-patch' first)"; exit 1; }
-	@if [ "$(DRY_RUN)" = "1" ]; then \
-		echo "[DRY_RUN] would push main, create tag $(TAG), and publish GitHub Release $(TAG) with:"; \
-		echo "  - $(ZIP)"; \
-		echo "  - $(ZIP).sha256"; \
+release: $(MODEL) $(WASM)
+	@set -euo pipefail; \
+	command -v gh >/dev/null 2>&1 || { echo "ERROR: GitHub CLI (gh) is required"; exit 1; }; \
+	test -z "$$(git status --porcelain)" || { echo "ERROR: working tree is not clean; commit changes before releasing"; git status --short; exit 1; }; \
+	branch=$$(git rev-parse --abbrev-ref HEAD); test "$$branch" = "main" || { echo "ERROR: releases must be cut from main (currently on $$branch)"; exit 1; }; \
+	cur="$(VERSION)"; \
+	if [ -n "$(NEW_VERSION)" ]; then \
+		target="$(NEW_VERSION)"; \
+	elif [ "$(BUMP)" = "patch" ]; then \
+		target=$$(python3 -c "a,b,c='$$cur'.split('.'); print(f'{a}.{b}.{int(c)+1}')"); \
+	elif [ "$(BUMP)" = "minor" ]; then \
+		target=$$(python3 -c "a,b,c='$$cur'.split('.'); print(f'{a}.{int(b)+1}.0')"); \
+	elif [ "$(BUMP)" = "none" ]; then \
+		target="$$cur"; \
+	elif [ "$(BUMP)" = "auto" ]; then \
+		if git rev-parse "v$$cur" >/dev/null 2>&1 || gh release view "v$$cur" --repo "$(REPO)" >/dev/null 2>&1; then \
+			target=$$(python3 -c "a,b,c='$$cur'.split('.'); print(f'{a}.{b}.{int(c)+1}')"); \
+		else \
+			target="$$cur"; \
+		fi; \
+	else \
+		echo "ERROR: unknown BUMP=$(BUMP) (use auto, patch, minor, or none)"; exit 1; \
+	fi; \
+	tag="v$$target"; \
+	zip_path="$(DIST)/Psalm101-extension-$$target.zip"; \
+	if [ "$(DRY_RUN)" = "1" ]; then \
+		$(MAKE) --no-print-directory check; \
+		echo "[DRY_RUN] version: $$cur -> $$target ($$tag)"; \
+		echo "[DRY_RUN] would bump/commit if changed, build $$zip_path, push main, and publish GitHub Release $$tag with:"; \
+		echo "  - $$zip_path"; \
+		echo "  - $$zip_path.sha256"; \
 		echo "  - $(MODEL)"; \
 		echo "  - $(WASM)"; \
+		exit 0; \
+	fi; \
+	if git rev-parse "$$tag" >/dev/null 2>&1; then \
+		echo "ERROR: git tag $$tag already exists"; exit 1; \
+	fi; \
+	if [ "$$target" != "$$cur" ]; then \
+		$(MAKE) --no-print-directory bump NEW_VERSION="$$target"; \
+		git add $(EXT)/manifest.json; \
+		test -f docs/cws-justifications.md && git add docs/cws-justifications.md || true; \
+		git commit -m "Release $$tag"; \
+	fi; \
+	$(MAKE) --no-print-directory bundle; \
+	git push origin main; \
+	if [ -n "$(NOTES_FILE)" ]; then \
+		gh release create "$$tag" "$$zip_path" "$$zip_path.sha256" "$(MODEL)" "$(WASM)" \
+			--repo "$(REPO)" --title "Psalm101 $$tag" --notes-file "$(NOTES_FILE)"; \
+	elif [ -n "$(NOTES)" ]; then \
+		gh release create "$$tag" "$$zip_path" "$$zip_path.sha256" "$(MODEL)" "$(WASM)" \
+			--repo "$(REPO)" --title "Psalm101 $$tag" --notes "$(NOTES)"; \
 	else \
-		git push origin main; \
-		if [ -n "$(NOTES_FILE)" ]; then \
-			gh release create "$(TAG)" "$(ZIP)" "$(ZIP).sha256" "$(MODEL)" "$(WASM)" \
-				--repo "$(REPO)" --title "Psalm101 $(TAG)" --notes-file "$(NOTES_FILE)"; \
-		elif [ -n "$(NOTES)" ]; then \
-			gh release create "$(TAG)" "$(ZIP)" "$(ZIP).sha256" "$(MODEL)" "$(WASM)" \
-				--repo "$(REPO)" --title "Psalm101 $(TAG)" --notes "$(NOTES)"; \
-		else \
-			gh release create "$(TAG)" "$(ZIP)" "$(ZIP).sha256" "$(MODEL)" "$(WASM)" \
-				--repo "$(REPO)" --title "Psalm101 $(TAG)" --generate-notes; \
-		fi; \
-		echo "published https://github.com/$(REPO)/releases/tag/$(TAG)"; \
-	fi
+		gh release create "$$tag" "$$zip_path" "$$zip_path.sha256" "$(MODEL)" "$(WASM)" \
+			--repo "$(REPO)" --title "Psalm101 $$tag" --generate-notes; \
+	fi; \
+	echo "published https://github.com/$(REPO)/releases/tag/$$tag"
 
 clean:
 	rm -rf $(DIST)
